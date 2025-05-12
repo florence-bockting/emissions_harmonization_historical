@@ -9,12 +9,18 @@ import pandas_indexing as pix
 from pandas_openscm.db import FeatherDataBackend, FeatherIndexBackend, OpenSCMDB
 
 from emissions_harmonization_historical.constants_5000 import (
+    CMIP7_GHG_PROCESSED_DB,
+    CMIP7_GHG_PROCESSING_ID,
     DOWNLOAD_SCENARIOS_ID,
     HISTORY_FOR_HARMONISATION_ID,
     HISTORY_HARMONISATION_DB,
     INFILLING_DB,
     INFILLING_DB_DIR,
     RAW_SCENARIO_DB,
+    RCMIP_PROCESSED_DB,
+    RCMIP_PROCESSING_ID,
+    WMO_2022_PROCESSED_DB,
+    WMO_2022_PROCESSING_ID,
 )
 
 
@@ -27,12 +33,18 @@ def main(pack: bool = True) -> None:
 
         raw_scenario_data = RAW_SCENARIO_DB.load(pix.ismatch(model=f"**{model_to_grab}**"))
         harmonisation_history = HISTORY_HARMONISATION_DB.load()
-        infilling_db = INFILLING_DB.load()
+        infilling_db_data = INFILLING_DB.load()
+        cmip_processed = CMIP7_GHG_PROCESSED_DB.load()
+        wmo_processed = WMO_2022_PROCESSED_DB.load()
+        rcmip_processed = RCMIP_PROCESSED_DB.load()
 
         for data, gzip in (
             (raw_scenario_data, REPO_ROOT / f"raw-scenarios_{DOWNLOAD_SCENARIOS_ID}.tar.gz"),
             (harmonisation_history, REPO_ROOT / f"harmonisation-history_{HISTORY_FOR_HARMONISATION_ID}.tar.gz"),
-            (infilling_db, REPO_ROOT / f"infilling-db_{INFILLING_DB_DIR.name}.tar.gz"),
+            (infilling_db_data, REPO_ROOT / f"infilling-db_{INFILLING_DB_DIR.name}.tar.gz"),
+            (cmip_processed, REPO_ROOT / f"cmip-processed_{CMIP7_GHG_PROCESSING_ID}.tar.gz"),
+            (wmo_processed, REPO_ROOT / f"wmo-processed_{WMO_2022_PROCESSING_ID}.tar.gz"),
+            (rcmip_processed, REPO_ROOT / f"rcmip-processed_{RCMIP_PROCESSING_ID}.tar.gz"),
         ):
             tmp_dir = Path(tempfile.mkdtemp())
             tmp_db_dir = tmp_dir / "db"
@@ -57,16 +69,15 @@ def main(pack: bool = True) -> None:
                 REPO_ROOT / f"infilling-db_{INFILLING_DB_DIR.name}.tar.gz",
                 INFILLING_DB.db_dir,
             ),
-            (
-                REPO_ROOT / "infilling-db_0005_0003_0003_0002.tar.gz",
-                INFILLING_DB.db_dir,
-            ),
+            (REPO_ROOT / f"cmip-processed_{CMIP7_GHG_PROCESSING_ID}.tar.gz", CMIP7_GHG_PROCESSED_DB.db_dir),
+            (REPO_ROOT / f"wmo-processed_{WMO_2022_PROCESSING_ID}.tar.gz", WMO_2022_PROCESSED_DB.db_dir),
+            (REPO_ROOT / f"rcmip-processed_{RCMIP_PROCESSING_ID}.tar.gz", RCMIP_PROCESSED_DB.db_dir),
         ):
             OpenSCMDB.from_gzipped_tar_archive(
                 tar_archive=gzip,
                 db_dir=dest,
             )
-            print(dest)
+            print(f"Unpacked {dest}")
 
 
 if __name__ == "__main__":
